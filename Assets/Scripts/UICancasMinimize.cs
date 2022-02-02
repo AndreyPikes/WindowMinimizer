@@ -4,11 +4,8 @@ using System.Collections.Generic;
 using System.Collections;
 
 [RequireComponent(typeof(CanvasRenderer))]
-public class UIImageMinimize : MaskableGraphic
-{
-    /// <summary>
-    /// Загруженная текстура
-    /// </summary>
+public class UICancasMinimize : MaskableGraphic
+{    
     [SerializeField]
     public Texture texture;
 
@@ -34,24 +31,18 @@ public class UIImageMinimize : MaskableGraphic
 
     [SerializeField]
     private float ForceCurve = 150f;
+    
+    private Vector2[] vertices;    //changing verticles on runtime
 
-    /// <summary>
-    /// массив векторов2 ВСЕ ТОЧКИ
-    /// </summary>
-    private Vector2[] vertices;    //ВОТ ЭТО МЕНЯЕТСЯ ПРИ АНИМАЦИИ
-
-    /// <summary>
-    /// массив векторов2 ВСЕ ТОЧКИ
-    /// </summary>
-    private Vector3[] verticesVisualize;
+    private Vector3[] verticesVisualize; //visualization of triangles in editor
 
     private bool isInitVertices = false;
 
     private Coroutine coroutine;
 
-    protected override void OnPopulateMesh(VertexHelper vertexHelper) //заполнить сетку ФИГАЧИТ В КАЖДОМ КАДРЕ и обновляет размер сетки
+    protected override void OnPopulateMesh(VertexHelper vertexHelper) //works on every frame
     {
-        float minX = (0f - rectTransform.pivot.x) * rectTransform.rect.width; //координаты углов экрана
+        float minX = (0f - rectTransform.pivot.x) * rectTransform.rect.width; //screen corners coordinates
         float minY = (0f - rectTransform.pivot.y) * rectTransform.rect.height;
         float maxX = (0f + rectTransform.pivot.x) * rectTransform.rect.width;
         float maxY = (0f + rectTransform.pivot.y) * rectTransform.rect.height;
@@ -59,9 +50,9 @@ public class UIImageMinimize : MaskableGraphic
         var color32 = (Color32)color;
 
         if (xSegmentsNumber < 1) xSegmentsNumber = 1;
-        if (ySegmentsNumber < 1) ySegmentsNumber = 1; //можно ограничить просто в инспекторе
+        if (ySegmentsNumber < 1) ySegmentsNumber = 1;
 
-        vertexHelper.Clear(); //почистили старый
+        vertexHelper.Clear(); //cleen previous frame
 
         if (isInitVertices && vertices.Length != (xSegmentsNumber + 1) * (ySegmentsNumber + 1))
         {
@@ -78,11 +69,11 @@ public class UIImageMinimize : MaskableGraphic
 
         for (int i = 0, y = 0; y <= ySegmentsNumber; y++)
         {
-            for (int x = 0; x <= xSegmentsNumber; x++, i++) //X - строки Y - столбцы I - все вместе
+            for (int x = 0; x <= xSegmentsNumber; x++, i++) //X - rows, Y - columns, I - both
             {                
-                float xWarp = - y * Xwarping; //сжатие сверху вниз
+                float xWarp = - y * Xwarping; //from top to bottom compression
 
-                float yWarp = ((-2f / (float)xSegmentsNumber) * x + 1) * (CurveY.Evaluate((1.0f/(float)ySegmentsNumber)*(float)y)  -  1.0f) * (1 - Xwarping); //Сужение по горизонтали, но проходимся по Y 
+                float yWarp = ((-2f / (float)xSegmentsNumber) * x + 1) * (CurveY.Evaluate((1.0f/(float)ySegmentsNumber)*(float)y)  -  1.0f) * (1 - Xwarping); //distortion canvas 
                 yWarp += ((-2f / (float)xSegmentsNumber) * x + 1) * Xwarping / ForceCurve * 10;
                 yWarp = yWarp * ForceCurve * Ywarping;      
                
@@ -90,9 +81,9 @@ public class UIImageMinimize : MaskableGraphic
                 
                 uv[i] = new Vector2((float)x / xSegmentsNumber, (float)y / ySegmentsNumber);
 
-                //вертисы для визуализации на сцене
+                //vertices to visualize on editor
                 verticesVisualize[i] = new Vector2((minX + ((vertices[i].x + yWarp) * ((maxX - minX) / xSegmentsNumber))), (minY + ((vertices[i].y + xWarp) * ((maxY - minY) / ySegmentsNumber))));
-                //а вот эти уже для деформации
+                //vertices for deformation
                 vertexHelper.AddVert(new Vector3((minX + ((vertices[i].x + yWarp) * ((maxX - minX) / xSegmentsNumber))), (minY + ((vertices[i].y + xWarp) * ((maxY - minY) / ySegmentsNumber)))), color32, new Vector2(uv[i].x, uv[i].y));
             }
         }
@@ -114,7 +105,7 @@ public class UIImageMinimize : MaskableGraphic
     }
 
     /// <summary>
-    /// Отрисовка сетки с точками в инспекторе
+    /// Editor visualization
     /// </summary>
     private void OnDrawGizmosSelected()
     {
@@ -189,8 +180,8 @@ public class UIImageMinimize : MaskableGraphic
                 Xwarping = value;
                 yield return new WaitForSeconds(0.02f);
             }
-            
         }
+
         if (value > target)
         {
             var delta = target - value;

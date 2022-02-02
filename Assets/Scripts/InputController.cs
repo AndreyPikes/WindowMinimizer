@@ -5,7 +5,7 @@ using UnityEngine;
 public class InputController : MonoBehaviour
 {
     [SerializeField] 
-    private UIImageMinimize minimizer;
+    private UICancasMinimize minimizer;
 
     [SerializeField] 
     private GameObject objectsOnCanvas;
